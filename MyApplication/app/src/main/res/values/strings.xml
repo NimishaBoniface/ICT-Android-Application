@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">MySimpleApplication</string>
+    <string name="contact_name">Hospital Name</string>
+    <string name="status">Status</string>
+    <string name="attach">Attach</string>
+    <string name="type_a_message">Type a message</string>
+    <string name="send">Send</string>
+    <string name="voice_message">Voice Message</string>
+    <string name="speech_to_text">Speech to Text</string>
+    <string name="real_time_speech">Real-Time Speech</string>
+    <string name="select_image">Select Image</string>
+    <string name="select_wav">Select WAV File</string>
+</resources>
