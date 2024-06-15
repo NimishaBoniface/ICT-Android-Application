@@ -25,22 +25,6 @@
         android:layout_above="@id/messageInputBar"
         android:orientation="vertical"
         android:padding="16dp">
-
-<!--        <TextView-->
-<!--            android:id="@+id/userMessage"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text=""-->
-<!--            android:textSize="16sp"-->
-<!--            android:paddingBottom="8dp" />-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/contactMessage"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text=""-->
-<!--            android:textSize="16sp"-->
-<!--            android:paddingBottom="8dp" />-->
     </LinearLayout>
 
 
@@ -90,13 +74,6 @@
             android:src="@android:drawable/ic_btn_speak_now"
             android:contentDescription="@string/voice_message" />
 
-        <ImageButton
-            android:id="@+id/speechToTextButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/speech_to_text1"
-            android:contentDescription="@string/speech_to_text"
-            android:scaleType="centerInside"/>
 
     </LinearLayout>
 
