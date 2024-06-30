@@ -20,6 +20,7 @@ public class SocketClientTask extends AsyncTask<String, Void, String> {
     private RegisterActivity registerActivity;
     private Context context;
     private String action;
+    private String username;
 
     public SocketClientTask(Context context) {
         this.context = context;
@@ -38,24 +39,32 @@ public class SocketClientTask extends AsyncTask<String, Void, String> {
             OutputStream outputStream = socket.getOutputStream();
             PrintWriter writer = new PrintWriter(outputStream, true);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            if (context instanceof MessagingActivity) {
+            if (context instanceof MessagingActivity && params.length == 1) {
                 String message = params[0];
+                jsonObject.put("username", username);
                 jsonObject.put("message", message);
 
             } else if(context instanceof LoginActivity||context instanceof RegisterActivity) {
                 String username = params[0];
                 String password = params[1];
+                String role = params.length > 2 ? params[2] : null;
 
 
                 try {
                     jsonObject.put("action", action);
                     jsonObject.put("username", username);
                     jsonObject.put("password", password);
+                    if (role != null) {
+                        jsonObject.put("role", role);
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
-
+            } else if (context instanceof MessagingActivity && params.length > 1 && params[1].equals("sendAudio")) {
+                String audioCsvData = params[0];
+                System.out.println(audioCsvData);
+                jsonObject.put("username", username);
+                jsonObject.put("audio_csv", audioCsvData);
             }
             String data = jsonObject.toString();
             writer.println(data);
@@ -81,7 +90,14 @@ public class SocketClientTask extends AsyncTask<String, Void, String> {
         }
     }
 
-    public void sendMessageToServer(String message) {
+
+    public void sendMessageToServer(String message, String username) {
+        this.username = username;
         execute(message);
+    }
+
+    public void sendAudioToServer(String audioCsvData, String username) {
+        this.username = username;
+        execute(audioCsvData, "sendAudio");
     }
 }

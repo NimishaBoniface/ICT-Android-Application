@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -25,6 +26,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -33,7 +35,6 @@ public class MessagingActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_RECORD_AUDIO = 1001;
     private static final int SAMPLE_RATE = 44100;
-
     private EditText messageEditText;
     private ImageButton attachmentButton, sendButton, voiceMessageButton;
     private LinearLayout messageArea;
@@ -42,15 +43,20 @@ public class MessagingActivity extends AppCompatActivity {
     private String audioFilePath;
     private Dialog recordDialog;
     private boolean isRecording = false;
-
     private AudioRecord audioRecord;
     private Thread recordingThread;
     private int bufferSize;
+    private short[] audioData;
+    private ImageButton backButton;
+    private String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_messaging);
+
+        Intent messagingActivityintentintent = getIntent();
+        username = messagingActivityintentintent.getStringExtra("username");
 
         // Initialize UI components
         messageEditText = findViewById(R.id.messageEditText);
@@ -58,10 +64,15 @@ public class MessagingActivity extends AppCompatActivity {
         sendButton = findViewById(R.id.sendButton);
         voiceMessageButton = findViewById(R.id.voiceMessageButton);
         messageArea = findViewById(R.id.messageArea);
+        backButton = findViewById(R.id.backButton);
 
         // Set up button listeners
         sendButton.setOnClickListener(v -> sendMessage());
         voiceMessageButton.setOnClickListener(v -> showRecordPopup());
+        backButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MessagingActivity.this, LoginActivity.class);
+            startActivity(intent);
+        });
     }
 
     public void showAttachmentOptions(View view) {
@@ -83,7 +94,7 @@ public class MessagingActivity extends AppCompatActivity {
         if (!message.isEmpty()) {
             addMessageToChat(message, true);
             messageEditText.setText("");
-            new SocketClientTask(this).sendMessageToServer(message);
+            new SocketClientTask(this).sendMessageToServer(message, username);
         }
     }
 
@@ -149,35 +160,44 @@ public class MessagingActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_RECORD_AUDIO);
             return;
         }
-
         audioFilePath = getExternalFilesDir(Environment.DIRECTORY_MUSIC) + "/recording.wav";
-        bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
-
+//        bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        bufferSize = 441000;
+        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize*2);
         audioRecord.startRecording();
         isRecording = true;
-
-        recordingThread = new Thread(() -> writeAudioDataToWavFile(), "AudioRecorder Thread");
+        audioData = new short[bufferSize]; // Initialize audioData array
+        recordingThread = new Thread(() -> {
+            writeAudioDataToWavFile();
+        }, "AudioRecorder Thread");
         recordingThread.start();
     }
 
     private void writeAudioDataToWavFile() {
-        byte[] data = new byte[bufferSize];
         try (FileOutputStream fos = new FileOutputStream(audioFilePath)) {
             writeWaveFileHeader(fos, SAMPLE_RATE, 1, 16);
-
             while (isRecording) {
-                int read = audioRecord.read(data, 0, bufferSize);
+                int read = audioRecord.read(audioData, 0, bufferSize);
+                System.out.println(read);
                 if (AudioRecord.ERROR_INVALID_OPERATION != read) {
-                    fos.write(data, 0, read);
+                    byte[] byteData = shortToByte(audioData, read);
+                    fos.write(byteData, 0, byteData.length);
+                    System.out.println("Length og Bytedata:"+byteData.length);
                 }
             }
-
             updateWaveFileHeader(audioFilePath, SAMPLE_RATE, 1, 16);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private byte[] shortToByte(short[] data, int length) {
+        byte[] bytes = new byte[length * 2];
+        for (int i = 0; i < length; i++) {
+            bytes[i * 2] = (byte) (data[i] & 0x00FF);
+            bytes[(i * 2) + 1] = (byte) (data[i] >> 8);
+        }
+        return bytes;
     }
 
     private void stopRecording() {
@@ -201,20 +221,24 @@ public class MessagingActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE_RECORD_AUDIO) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startRecording();
-            } else {
-                Toast.makeText(this, "Permissions not granted", Toast.LENGTH_SHORT).show();
+    public String byteArray_to_csvString(short [ ] A)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i<A.length; i++)
+        {
+            sb=sb.append(A[i]);
+            if(i != A.length-1) {
+                sb.append(",");
             }
         }
+        return sb.toString();
     }
 
+
     private void sendAudioToServer() {
-        // Implement your logic to convert the audio to CSV format and send to server
+        String csvS = byteArray_to_csvString(audioData); // Convert audio data to CSV string
+        String senMsg = "UPLOAD " + csvS + "\n"; // Prefix with "UPLOAD "
+        new SocketClientTask(this).sendAudioToServer(senMsg, username);
     }
 
     public void handleServerResponse(String response) {
@@ -225,7 +249,6 @@ public class MessagingActivity extends AppCompatActivity {
         byte[] header = new byte[44];
         long totalDataLen = 36;
         long byteRate = sampleRate * channels * bitDepth / 8;
-
         header[0] = 'R'; // RIFF/WAVE header
         header[1] = 'I';
         header[2] = 'F';
@@ -270,7 +293,6 @@ public class MessagingActivity extends AppCompatActivity {
         header[41] = 0;
         header[42] = 0;
         header[43] = 0;
-
         out.write(header, 0, 44);
     }
 
@@ -280,7 +302,6 @@ public class MessagingActivity extends AppCompatActivity {
             long totalDataLen = fileSize - 8;
             long totalAudioLen = fileSize - 44;
             long byteRate = sampleRate * channels * bitDepth / 8;
-
             raf.seek(4);
             raf.write((int) (totalDataLen & 0xff));
             raf.write((int) ((totalDataLen >> 8) & 0xff));
@@ -293,4 +314,17 @@ public class MessagingActivity extends AppCompatActivity {
             raf.write((int) ((totalAudioLen >> 24) & 0xff));
         }
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startRecording();
+            } else {
+                Toast.makeText(this, "Permissions not granted", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
 }

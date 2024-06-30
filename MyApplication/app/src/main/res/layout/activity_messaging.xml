@@ -5,28 +5,46 @@
     android:layout_height="match_parent"
     tools:context=".MessagingActivity">
 
-    <TextView
-        android:id="@+id/hospitalName"
+    <RelativeLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/contact_name"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="#EEEEEE" />
+        android:background="#EEEEEE"
+        android:padding="16dp">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Back"
+            android:onClick="onBackButtonClicked"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true" />
+
+        <TextView
+            android:id="@+id/hospitalName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/contact_name"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_toEndOf="@id/backButton"
+            android:layout_centerVertical="true" />
+    </RelativeLayout>
 
     <!-- Chat Messages Area -->
     <LinearLayout
         android:id="@+id/messageArea"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_below="@id/hospitalName"
+        android:layout_below="@id/topBar"
         android:layout_above="@id/messageInputBar"
         android:orientation="vertical"
         android:padding="16dp">
     </LinearLayout>
-
 
     <!-- Input Field and Buttons -->
     <LinearLayout
@@ -65,7 +83,7 @@
             android:layout_height="48dp"
             android:src="@android:drawable/ic_menu_send"
             android:contentDescription="@string/send"
-            android:textColor="@android:color/white"/>
+            android:textColor="@android:color/white" />
 
         <ImageButton
             android:id="@+id/voiceMessageButton"
@@ -73,9 +91,5 @@
             android:layout_height="48dp"
             android:src="@android:drawable/ic_btn_speak_now"
             android:contentDescription="@string/voice_message" />
-
-
     </LinearLayout>
-
-
 </RelativeLayout>
