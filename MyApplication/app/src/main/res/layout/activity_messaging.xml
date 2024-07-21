@@ -63,8 +63,7 @@
             android:layout_height="48dp"
             android:src="@drawable/attachment"
             android:contentDescription="@string/attach"
-            android:scaleType="centerInside"
-            android:onClick="showAttachmentOptions" />
+            android:scaleType="centerInside"/>
 
         <EditText
             android:id="@+id/messageEditText"

@@ -7,56 +7,63 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.TextView;
-import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-public class RegisterActivity extends Fragment implements SocketResponseHandler, ConnectionListener{
+public class PatientLoginActivity extends Fragment implements SocketResponseHandler, ConnectionListener {
 
     private TextInputLayout usernameTextInputLayout, passwordTextInputLayout;
     private TextInputEditText usernameEditText, passwordEditText;
-    private Button registerButton;
+    private Button loginButton, registerButton;
     private ImageButton backButton;
+    private String role;
     private SocketManager socketManager;
+    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_register, container, false);
-        socketManager = SocketManager.getInstance();
+        // Inflate the layout for this fragment
+        View view = inflater.inflate(R.layout.activity_login, container, false);
+
+        if (getArguments() != null) {
+            role = getArguments().getString("role");
+        }
+
+        // Initialize UI elements
         usernameTextInputLayout = view.findViewById(R.id.usernameTextInputLayout);
         passwordTextInputLayout = view.findViewById(R.id.passwordTextInputLayout);
         usernameEditText = view.findViewById(R.id.usernameEditText);
         passwordEditText = view.findViewById(R.id.passwordEditText);
+        loginButton = view.findViewById(R.id.loginButton);
         registerButton = view.findViewById(R.id.registerButton);
         backButton = view.findViewById(R.id.backButton);
-        registerButton.setEnabled(false);
-        registerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                registerUser();
-            }
+        socketManager = SocketManager.getInstance();
+        // Set up the login button state and listeners
+        loginButton.setEnabled(false);
+        loginButton.setOnClickListener(v -> loginUser());
+        registerButton.setOnClickListener(v -> {
+            RegisterActivity registerFragment = new RegisterActivity();
+            ((MainActivity) getActivity()).navigateToFragment(registerFragment);
         });
         backButton.setOnClickListener(v -> {
-            getParentFragmentManager().popBackStack();
+            WelcomeActivity welcomeActivity = new WelcomeActivity();
+            ((MainActivity) getActivity()).navigateToFragment(welcomeActivity);
         });
+
         setupEditText(usernameEditText, usernameTextInputLayout, 3);
         setupEditText(passwordEditText, passwordTextInputLayout, 8);
+
         return view;
     }
     private void setupEditText(TextInputEditText editText, TextInputLayout layout, int minLength) {
@@ -66,13 +73,12 @@ public class RegisterActivity extends Fragment implements SocketResponseHandler,
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 layout.setError(null);
-                // Only show the error if there is some text and it's less than the required length
                 if (editText.isFocused() && s.length() > 0 && s.length() < minLength) {
                     layout.setError("Must be at least " + minLength + " characters");
                 } else {
                     layout.setError(null);
                 }
-                updateRegisterButtonState();
+                updateLoginButtonState();
             }
             @Override
             public void afterTextChanged(Editable s) {}
@@ -87,17 +93,27 @@ public class RegisterActivity extends Fragment implements SocketResponseHandler,
             }
         });
     }
-
-    private void registerUser() {
+    private void updateLoginButtonState() {
         String username = usernameEditText.getText().toString();
+        String password = passwordEditText.getText().toString();
+        boolean usernameIsValid = username.length() >= 3;
+        boolean passwordIsValid = password.length() >= 8;
 
+        loginButton.setEnabled(usernameIsValid && passwordIsValid);
+    }
+    private void loginUser() {
+        String username = usernameEditText.getText().toString();
+        String password = passwordEditText.getText().toString();
+
+        // Use SocketClientTask to send login request to the server
         try {
-            TrustManager[] trustManagers = createTrustManagers();
-        socketManager.createSocket(username, trustManagers,this, this) ;
+        TrustManager[] trustManagers = createTrustManagers();
+        socketManager.createSocket(username, trustManagers, this, this);
         } catch (Exception e) {
             e.printStackTrace();
-        }
+            }
     }
+
     private TrustManager[] createTrustManagers() throws Exception {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate ca;
@@ -111,53 +127,55 @@ public class RegisterActivity extends Fragment implements SocketResponseHandler,
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(keyStore);
+
         return tmf.getTrustManagers();
     }
     @Override
     public void onConnected() {
         String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();
-        socketManager.sendMessage(username, "register", password, null, null, null, null);
+        socketManager.sendMessage(username, "login", password, role, null, null,null);
     }
-
-    @Override
-    public void onDisconnected() {}
-
     @Override
     public void onConnectionFailed(Exception e) {}
-
-   @Override
+    @Override
+    public void onDisconnected() {}
+    @Override
     public void handleServerResponse(String response) {
-       getActivity().runOnUiThread(() -> {
-           if (getActivity() == null) return;
-           if (response.contains("success")) {
-               PatientLoginActivity loginFragment = new PatientLoginActivity();
-               Bundle bundle = new Bundle();
-               bundle.putString("username", usernameEditText.getText().toString());
-               bundle.putString("role", "patient");
-               loginFragment.setArguments(bundle);
-               ((MainActivity) getActivity()).navigateToFragment(loginFragment);
-           } else {
+        getActivity().runOnUiThread(() -> {
+                if (response.contains("success")) {
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            JSONArray data = jsonResponse.getJSONArray("data");
+                            for (int i = 0; i < data.length(); i++) {
+                                try {
+                                    JSONObject userObject = data.getJSONObject(i);
+                                    String username = userObject.getString("username");
+                                    PatientAppDataSingleton.getInstance().addUserData(username, userObject);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        MessagingActivity messagingActivity = new MessagingActivity();
+                        Bundle bundle = new Bundle();
+                        bundle.putString("username", usernameEditText.getText().toString());
+                        bundle.putString("role", "patient");
+                        messagingActivity.setArguments(bundle);
+                        ((MainActivity) getActivity()).navigateToFragment(messagingActivity);
 
-               try {
-                   JSONObject jsonResponse = new JSONObject(response);
-                   String message = jsonResponse.getString("message");
-                   usernameTextInputLayout.setError(message);
-               } catch (JSONException e) {
-                   e.printStackTrace();
-                   usernameTextInputLayout.setError("Error parsing response");
-               }
-           }
-       });
-    }
-
-    private void updateRegisterButtonState() {
-        String username = usernameEditText.getText().toString();
-        String password = passwordEditText.getText().toString();
-        boolean usernameIsValid = username.length() >= 3;
-        boolean passwordIsValid = password.length() >= 8;
-
-        // Enable the register button only if both username and password are valid
-        registerButton.setEnabled(usernameIsValid && passwordIsValid);
-    }
+                } else {
+                     try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        String message = jsonResponse.getString("message");
+                        usernameTextInputLayout.setError(message);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        usernameTextInputLayout.setError("User not Registered");
+                    }
+                }
+    });
+   }
 }

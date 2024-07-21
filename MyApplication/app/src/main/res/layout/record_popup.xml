@@ -1,43 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
+    android:gravity="center_horizontal"
     android:background="@android:color/white">
+
     <TextView
-        android:id="@+id/dialogTitle"
+        android:id="@+id/recordingStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Record Audio"
-        android:textSize="20sp"
-        android:textStyle="bold"
         android:gravity="center"
-        android:paddingBottom="16dp"/>
-    <Button
-        android:id="@+id/startRecordingButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Start Recording" />
+        android:text="Ready to record"
+        android:textSize="18sp"
+        android:textColor="@android:color/black" />
 
-    <Button
-        android:id="@+id/stopRecordingButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Stop Recording"
-        android:visibility="gone" />
+    <ProgressBar
+        android:id="@+id/recordingProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="16dp"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/circular_progress" />
 
-    <Button
-        android:id="@+id/playRecordingButton"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Play Recording"
-        android:visibility="gone" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp">
 
-    <Button
-        android:id="@+id/uploadButton"
+        <Button
+            android:id="@+id/recordButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            android:onClick="onRecordButtonClicked"
+            android:text="Record"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:background="@android:color/holo_purple"
+            android:padding="10dp" />
+
+        <Button
+            android:id="@+id/playButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            android:onClick="onPlayButtonClicked"
+            android:text="Play"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:background="@android:color/holo_purple"
+            android:padding="10dp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Upload"
-        android:visibility="gone" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/uploadButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            android:text="Upload"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:background="@android:color/holo_purple"
+            android:padding="10dp"/>
+    </LinearLayout>
 </LinearLayout>

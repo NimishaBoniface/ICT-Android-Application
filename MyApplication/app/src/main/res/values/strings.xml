@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">MySimpleApplication</string>
-    <string name="contact_name">Hospital Name</string>
+    <string name="contact_name">Share Data to Doctor</string>
     <string name="status">Status</string>
     <string name="attach">Attach</string>
     <string name="type_a_message">Type a message</string>

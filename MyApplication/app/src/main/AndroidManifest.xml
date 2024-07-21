@@ -31,14 +31,14 @@
 <!--            </intent-filter>-->
 <!--        </activity>-->
 
-        <activity android:name=".MessagingActivity"></activity>
+<!--        <activity android:name=".MessagingActivity"></activity>-->
 
-        <activity android:name=".RegisterActivity"></activity>
+<!--        <activity android:name=".RegisterActivity"></activity>-->
 
-        <activity android:name=".LoginActivity"></activity>
+<!--        <activity android:name=".PatientLoginActivity"></activity>-->
 
-        <activity android:name=".DoctorActivity"></activity>
-        <activity android:name=".UserDetailActivity"></activity>
+<!--        <activity android:name=".DoctorActivity"></activity>-->
+<!--        <activity android:name=".UserDetailActivity"></activity>-->
 
         <activity android:name=".MainActivity"
             android:exported="true">
