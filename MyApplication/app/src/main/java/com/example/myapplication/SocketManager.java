@@ -23,8 +23,9 @@ public class SocketManager {
     private Map<String, UserSocket> userSockets = new HashMap<>();
     private long sendTimestamp;
 
-    private SocketManager() {}
+    private SocketManager() {
 
+    }
     public static synchronized SocketManager getInstance() {
         if (instance == null) {
             instance = new SocketManager();

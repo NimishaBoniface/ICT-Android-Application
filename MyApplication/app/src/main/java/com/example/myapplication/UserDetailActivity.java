@@ -177,20 +177,28 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
         int heightInPixels = (int) (48 * getResources().getDisplayMetrics().density + 0.5f);
         Button playButton = new Button(requireContext());
         playButton.setText("Play Audio");
+        playButton.setBackgroundResource(R.drawable.custom_button_background); // Set the custom background
+        playButton.setPadding(16, 8, 16, 8); // Add padding
+        playButton.setCompoundDrawablePadding(8);
         LinearLayout.LayoutParams playButtonParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 heightInPixels
         );
+        playButtonParams.setMargins(0, 16, 16, 16);
         playButtonParams.gravity = Gravity.START; // Align button to the left
         playButton.setLayoutParams(playButtonParams);
         playButton.setOnClickListener(v -> playAudio());
 
         Button downloadButton = new Button(requireContext());
-        downloadButton.setText("Play Audio");
+        downloadButton.setText("Download Audio");
+        downloadButton.setBackgroundResource(R.drawable.custom_button_background); // Set the custom background
+        downloadButton.setPadding(16, 8, 16, 8); // Add padding
+        downloadButton.setCompoundDrawablePadding(8);
         LinearLayout.LayoutParams downloadButtonParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 heightInPixels
         );
+        downloadButtonParams.setMargins(0, 16, 16, 16);
         downloadButtonParams.gravity = Gravity.START; // Align button to the left
         downloadButton.setLayoutParams(downloadButtonParams);// Add your download icon here
         downloadButton.setOnClickListener(v -> downloadAudio());
@@ -246,10 +254,11 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
             LinearLayout.LayoutParams downloadButtonParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     heightInPixels);
+            downloadButton.setBackgroundResource(R.drawable.custom_button_background); // Set the custom background
+            downloadButton.setPadding(16, 8, 16, 8); // Add padding
+            downloadButton.setCompoundDrawablePadding(8);
+            downloadButtonParams.setMargins(0, 16, 0, 16);
             downloadButton.setLayoutParams(downloadButtonParams);
-            downloadButton.setOnClickListener(v -> {
-                // Implement your download logic here
-            });
             horizontalLayout.addView(downloadButton);
 
             downloadButton.setOnClickListener(v -> {
@@ -282,6 +291,7 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
+        params.setMargins(0, 16, 0, 16);
             textView.setBackgroundResource(R.drawable.user_message_background);
             params.gravity = Gravity.START;
         textView.setLayoutParams(params);
