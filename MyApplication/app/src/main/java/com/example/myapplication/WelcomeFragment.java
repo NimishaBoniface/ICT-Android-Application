@@ -8,7 +8,7 @@ import android.widget.Button;
 
 import androidx.fragment.app.Fragment;
 
-public class WelcomeActivity extends Fragment {
+public class WelcomeFragment extends Fragment {
     private Button patientLoginButton, doctorLoginButton;
 
     @Override
@@ -23,14 +23,14 @@ public class WelcomeActivity extends Fragment {
         patientLoginButton.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("role", "patient");
-            PatientLoginActivity loginFragment = new PatientLoginActivity();
+            PatientLoginFragment loginFragment = new PatientLoginFragment();
             loginFragment.setArguments(bundle);
             ((MainActivity) getActivity()).navigateToFragment(loginFragment);
         });
         doctorLoginButton.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("role", "doctor");
-            DoctorLoginActivity doctorloginFragment = new DoctorLoginActivity();
+            DoctorLoginFragment doctorloginFragment = new DoctorLoginFragment();
             doctorloginFragment.setArguments(bundle);
             ((MainActivity) getActivity()).navigateToFragment(doctorloginFragment);
         });

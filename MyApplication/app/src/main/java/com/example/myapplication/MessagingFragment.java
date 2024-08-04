@@ -27,7 +27,6 @@ import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -58,7 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-public class MessagingActivity extends Fragment implements SocketResponseHandler,ConnectionListener{
+public class MessagingFragment extends Fragment implements SocketResponseHandler,ConnectionListener{
     private static final int REQUEST_CODE_RECORD_AUDIO = 1001;
     private static final int REQUEST_CODE_READ_MEDIA_AUDIO = 1002;
     private static final int SAMPLE_RATE = 44100;
@@ -111,7 +110,7 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
             if (socketManager != null) {
                 socketManager.disconnect(username, this, this);
             }
-            PatientLoginActivity loginActivity = new PatientLoginActivity();
+            PatientLoginFragment loginActivity = new PatientLoginFragment();
             Bundle bundle = new Bundle();
             bundle.putString("role", "patient");
             loginActivity.setArguments(bundle);

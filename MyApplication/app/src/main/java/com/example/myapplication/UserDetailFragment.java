@@ -1,6 +1,5 @@
 package com.example.myapplication;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioFormat;
@@ -34,7 +33,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-public class UserDetailActivity extends Fragment implements SocketResponseHandler,ConnectionListener{
+public class UserDetailFragment extends Fragment implements SocketResponseHandler,ConnectionListener{
     private short[] audioData;
     private Button btnPlayAudio;
     private ImageButton backButton;
@@ -301,7 +300,7 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
     }
     public void onBackButtonClicked(View view) {
 
-        DoctorActivity doctorActivity = new DoctorActivity();
+        DoctorDashboardFragment doctorActivity = new DoctorDashboardFragment();
         Bundle bundle = new Bundle();
         bundle.putString("username", doctorUsername);
         doctorActivity.setArguments(bundle);

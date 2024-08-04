@@ -22,48 +22,39 @@ import java.security.cert.CertificateFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-public class PatientLoginActivity extends Fragment implements SocketResponseHandler, ConnectionListener {
-
+public class DoctorLoginFragment extends Fragment implements SocketResponseHandler, ConnectionListener {
     private TextInputLayout usernameTextInputLayout, passwordTextInputLayout;
     private TextInputEditText usernameEditText, passwordEditText;
     private Button loginButton, registerButton;
     private ImageButton backButton;
     private String role;
     private SocketManager socketManager;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.activity_login, container, false);
-
+        View view = inflater.inflate(R.layout.activity_doctorlogin, container, false);
         if (getArguments() != null) {
             role = getArguments().getString("role");
         }
-
         // Initialize UI elements
-        usernameTextInputLayout = view.findViewById(R.id.usernameTextInputLayout);
+        usernameTextInputLayout = view.findViewById(R.id.doctorIdInputLayout);
         passwordTextInputLayout = view.findViewById(R.id.passwordTextInputLayout);
-        usernameEditText = view.findViewById(R.id.usernameEditText);
+        usernameEditText = view.findViewById(R.id.doctorIdEditText);
         passwordEditText = view.findViewById(R.id.passwordEditText);
         loginButton = view.findViewById(R.id.loginButton);
-        registerButton = view.findViewById(R.id.registerButton);
         backButton = view.findViewById(R.id.backButton);
         socketManager = SocketManager.getInstance();
         // Set up the login button state and listeners
         loginButton.setEnabled(false);
         loginButton.setOnClickListener(v -> loginUser());
-        registerButton.setOnClickListener(v -> {
-            RegisterActivity registerFragment = new RegisterActivity();
-            ((MainActivity) getActivity()).navigateToFragment(registerFragment);
-        });
         backButton.setOnClickListener(v -> {
-            WelcomeActivity welcomeActivity = new WelcomeActivity();
+            WelcomeFragment welcomeActivity = new WelcomeFragment();
             ((MainActivity) getActivity()).navigateToFragment(welcomeActivity);
         });
-
+        // Set up text input fields
         setupEditText(usernameEditText, usernameTextInputLayout, 3);
         setupEditText(passwordEditText, passwordTextInputLayout, 8);
-
         return view;
     }
     private void setupEditText(TextInputEditText editText, TextInputLayout layout, int minLength) {
@@ -104,23 +95,19 @@ public class PatientLoginActivity extends Fragment implements SocketResponseHand
     private void loginUser() {
         String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();
-
-        // Use SocketClientTask to send login request to the server
         try {
-        TrustManager[] trustManagers = createTrustManagers();
-        socketManager.createSocket(username, trustManagers, this, this);
+            TrustManager[] trustManagers = createTrustManagers();
+            socketManager.createSocket(username, trustManagers, this, this);
         } catch (Exception e) {
             e.printStackTrace();
-            }
+        }
     }
-
     private TrustManager[] createTrustManagers() throws Exception {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate ca;
         try (InputStream caInput = getActivity().getAssets().open("certificate.crt")) {
             ca = cf.generateCertificate(caInput);
         }
-
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);
         keyStore.setCertificateEntry("ca", ca);
@@ -137,45 +124,47 @@ public class PatientLoginActivity extends Fragment implements SocketResponseHand
         socketManager.sendMessage(username, "login", password, role, null, null,null);
     }
     @Override
-    public void onConnectionFailed(Exception e) {}
+    public void onConnectionFailed(Exception e) { }
     @Override
     public void onDisconnected() {}
+
     @Override
     public void handleServerResponse(String response) {
         getActivity().runOnUiThread(() -> {
-                if (response.contains("success")) {
+        if (response.contains("success")) {
+            if ("doctor".equals(role)) {
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    JSONArray data = jsonResponse.getJSONArray("data");
+                    for (int i = 0; i < data.length(); i++) {
                         try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            JSONArray data = jsonResponse.getJSONArray("data");
-                            for (int i = 0; i < data.length(); i++) {
-                                try {
-                                    JSONObject userObject = data.getJSONObject(i);
-                                    String username = userObject.getString("username");
-                                    PatientAppDataSingleton.getInstance().addUserData(username, userObject);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
+                            JSONObject userObject = data.getJSONObject(i);
+                            String username = userObject.getString("username");
+                            DoctorAppDataSingleton.getInstance().addUserData(username, userObject);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-                        MessagingActivity messagingActivity = new MessagingActivity();
-                        Bundle bundle = new Bundle();
-                        bundle.putString("username", usernameEditText.getText().toString());
-                        bundle.putString("role", "patient");
-                        messagingActivity.setArguments(bundle);
-                        ((MainActivity) getActivity()).navigateToFragment(messagingActivity);
-
-                } else {
-                     try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        String message = jsonResponse.getString("message");
-                        usernameTextInputLayout.setError(message);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        usernameTextInputLayout.setError("User not Registered");
                     }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-    });
-   }
+                DoctorDashboardFragment doctorActivity = new DoctorDashboardFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("username", usernameEditText.getText().toString());
+                bundle.putString("role", "doctor");
+                doctorActivity.setArguments(bundle);
+                ((MainActivity) getActivity()).navigateToFragment(doctorActivity);
+            }
+        } else {
+            try {
+                JSONObject jsonResponse = new JSONObject(response);
+                String message = jsonResponse.getString("message");
+                usernameTextInputLayout.setError(message);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                usernameTextInputLayout.setError("Error parsing response");
+            }
+          }
+        });
+    }
 }

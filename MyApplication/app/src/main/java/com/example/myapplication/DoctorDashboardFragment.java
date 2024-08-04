@@ -24,7 +24,7 @@ import java.util.Set;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-public class DoctorActivity  extends Fragment implements SocketResponseHandler,ConnectionListener {
+public class DoctorDashboardFragment extends Fragment implements SocketResponseHandler,ConnectionListener {
     private LinearLayout dataArea;
     private Map<String, Button> userButtons = new HashMap<>();
     private LinearLayout linearLayout;
@@ -63,7 +63,7 @@ public class DoctorActivity  extends Fragment implements SocketResponseHandler,C
             button.setText("View data for " + patientUsername);
             userButtons.put(patientUsername, button);
             button.setOnClickListener(v -> {
-                UserDetailActivity userDetailActivity = new UserDetailActivity();
+                UserDetailFragment userDetailActivity = new UserDetailFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString("patientUsername", patientUsername);
                 bundle.putString("doctorUsername", doctorUsername);
@@ -127,7 +127,7 @@ public class DoctorActivity  extends Fragment implements SocketResponseHandler,C
             Button button = new Button(requireContext());
             button.setText("View data for " + username);
             button.setOnClickListener(v -> {
-                UserDetailActivity userDetailActivity = new UserDetailActivity();
+                UserDetailFragment userDetailActivity = new UserDetailFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString("patientUsername", username);
                 bundle.putString("doctorUsername", doctorUsername);
@@ -144,7 +144,7 @@ public class DoctorActivity  extends Fragment implements SocketResponseHandler,C
         if (socketManager != null) {
             socketManager.disconnect(doctorUsername, this, this);
         }
-        DoctorLoginActivity loginActivity = new DoctorLoginActivity();
+        DoctorLoginFragment loginActivity = new DoctorLoginFragment();
         Bundle bundle = new Bundle();
         bundle.putString("role", "doctor");
         loginActivity.setArguments(bundle);
