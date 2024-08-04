@@ -110,8 +110,7 @@ public class DoctorActivity  extends Fragment implements SocketResponseHandler,C
             try {
                 if(response != null){
                     JSONObject jsonResponse = new JSONObject(response);
-                    if (jsonResponse.has("username") && jsonResponse.has("message") ) {
-                        String message = jsonResponse.getString("message");
+                    if (jsonResponse.has("username") && (jsonResponse.has("message") ||jsonResponse.has("audio_data") || jsonResponse.has("image_base64"))) {
                         String username = jsonResponse.getString("username");
                         DoctorAppDataSingleton.getInstance().addUserData(username, jsonResponse);
                         addUserButton(username);

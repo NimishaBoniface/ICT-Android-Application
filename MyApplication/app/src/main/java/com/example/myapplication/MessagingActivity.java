@@ -60,6 +60,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 public class MessagingActivity extends Fragment implements SocketResponseHandler,ConnectionListener{
     private static final int REQUEST_CODE_RECORD_AUDIO = 1001;
+    private static final int REQUEST_CODE_READ_MEDIA_AUDIO = 1002;
     private static final int SAMPLE_RATE = 44100;
     private EditText messageEditText;
     private ImageButton attachmentButton, sendButton, voiceMessageButton;
@@ -80,6 +81,8 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
     private TrustManager[] trustManagers;
     private List<Uri> selectedImages = new ArrayList<>();
     private ActivityResultLauncher<Intent> selectImageLauncher;
+    private ActivityResultLauncher<Intent> selectWavLauncher;
+    private Uri selectedWavUri;
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -156,15 +159,27 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
             selectedImages.clear();
             selectImage();
         });
-        btnSelectWav.setOnClickListener(v -> bottomSheetDialog.dismiss());
+
+
+        btnSelectWav.setOnClickListener(v -> {
+            bottomSheetDialog.dismiss();
+            selectWavFile();
+
+        });
+
         bottomSheetDialog.setOnDismissListener(dialog -> selectedImages.clear());
         bottomSheetDialog.show();
     }
     private void selectImage() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); // Allow multiple selection
+//        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); // Allow multiple selection
         selectImageLauncher.launch(intent);
     }
+    private void selectWavFile() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
+        selectWavLauncher.launch(intent);
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -186,40 +201,56 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
                     }
                 }
         );
+
+        selectWavLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
+                        Uri wavUri = result.getData().getData();
+                        if (wavUri != null) {
+                            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE_READ_MEDIA_AUDIO);
+                                selectedWavUri = wavUri; // Store the selected URI to handle it after permission is granted
+                            } else {
+                                handleWavFileSelected(wavUri);
+                            }
+                        }
+                    }
+                }
+        );
     }
+
+    private void handleWavFileSelected(Uri wavUri) {
+        try {
+            InputStream inputStream = requireContext().getContentResolver().openInputStream(wavUri);
+            byte[] wavData = getBytes(inputStream);
+            // Extract audio data from WAV file
+            audioData = extractAudioDataFromWav(wavData);
+            sendAudioToServer();
+            addPlayButtonToChat();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private short[] extractAudioDataFromWav(byte[] wavData) {
+        // Skip the WAV header (first 44 bytes)
+        int headerSize = 44;
+        bufferSize = (wavData.length - headerSize) / 2; // 16-bit PCM data (2 bytes per sample)
+        short[] audioData = new short[bufferSize];
+
+        for (int i = 0; i < bufferSize; i++) {
+            audioData[i] = (short) ((wavData[headerSize + i * 2] & 0xFF) | (wavData[headerSize + i * 2 + 1] << 8));
+        }
+        return audioData;
+    }
+
 
     private void handleImageSelected(Uri imageUri) {
         selectedImages.add(imageUri);
-        showSelectedImagesPopup();
+        sendSelectedImages();
     }
 
-    private void showSelectedImagesPopup() {
-        Dialog dialog = new Dialog(requireContext());
-        dialog.setContentView(R.layout.popup_selected_images);
-        dialog.setCanceledOnTouchOutside(false);
-        LinearLayout selectedImagesContainer = dialog.findViewById(R.id.selectedImagesContainer);
-        Button sendButton = dialog.findViewById(R.id.sendButton);
-        selectedImagesContainer.removeAllViews();
-        // Add selected images to the container
-        for (Uri imageUri : selectedImages) {
-            ImageView imageView = new ImageView(requireContext());
-            imageView.setImageURI(imageUri);
-            // Scale the images to fit better
-            imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    300 // Set height to a smaller size
-            ));
-            imageView.setAdjustViewBounds(true);
-            selectedImagesContainer.addView(imageView);
-        }
-        // Set up send button click listener
-        sendButton.setOnClickListener(v -> {
-            sendSelectedImages();
-            dialog.dismiss();
-        });
-
-        dialog.show();
-    }
     private void sendSelectedImages() {
         try {
             if(trustManagers != null){
@@ -347,6 +378,10 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
         Button uploadButton = recordDialog.findViewById(R.id.uploadButton);
 
         recordButton.setOnClickListener(v -> {
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_RECORD_AUDIO);
+                return;
+            }
             startRecording();
             dialogUIManagement(recordingStatus,recordingProgress, recordButton,playButton,
                     uploadButton);
@@ -400,7 +435,7 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
     }
 
     private void downloadAudio() {
-        String path = requireContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC) + "/recording_patient.wav";
+        String path = requireContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC) +"/recording_" + System.currentTimeMillis()+"_"+username + ".wav";
         try (FileOutputStream fos = new FileOutputStream(path)) {
             writeWaveFileHeader(fos, SAMPLE_RATE, 1, 16);
             byte[] byteData = shortToByte(audioData, audioData.length);
@@ -597,6 +632,19 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
                 Toast.makeText(requireContext(), "Permissions not granted", Toast.LENGTH_SHORT).show();
             }
         }
+
+        if (requestCode == REQUEST_CODE_READ_MEDIA_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (selectedWavUri != null) {
+                    handleWavFileSelected(selectedWavUri);
+                    selectedWavUri = null;
+                }
+            } else {
+                Toast.makeText(requireContext(), "Permission denied to read media audio", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+
     }
     private void dialogUIManagement(TextView recordingStatus, ProgressBar recordingProgress, Button recordButton, Button playButton, Button uploadButton) {
         recordingStatus.setText("Recording...");
@@ -682,7 +730,7 @@ public class MessagingActivity extends Fragment implements SocketResponseHandler
     private void saveImageToDownloads(@NonNull Bitmap bitmap) {
         File downloadDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
         if (downloadDir != null) {
-            File imageFile = new File(downloadDir, "image1" + ".png");
+            File imageFile = new File(downloadDir, "image_" + System.currentTimeMillis() +"_"+ username+ ".png");
             try (FileOutputStream out = new FileOutputStream(imageFile)) {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                 Toast.makeText(requireContext(), "Image saved to Downloads", Toast.LENGTH_SHORT).show();

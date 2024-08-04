@@ -98,43 +98,45 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
             try {
                 if(response != null){
                     JSONObject jsonResponse = new JSONObject(response);
-                    String username = jsonResponse.getString("username");
-                    DoctorAppDataSingleton.getInstance().addUserData(username, jsonResponse);
-                    updateMessages(jsonResponse, username);
+                    if (jsonResponse.has("username")) {
+                        String username = jsonResponse.getString("username");
+                        DoctorAppDataSingleton.getInstance().addUserData(username, jsonResponse);
+                        updateMessages(jsonResponse, username);
+                    }
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         });
         long receiveTimestamp = System.currentTimeMillis();
-        System.out.println("Receive Timestamp: " + receiveTimestamp);
     }
     private void updateMessages(JSONObject messageData, String username) {
         try {
             if (messageData.getString("username").equals(username)) {
-
-
                 if (messageData.has("message")) {
                     long sendTimestamp = messageData.getLong("timestamp");
                     long receiveTimestamp = System.currentTimeMillis();
                     long latency = (receiveTimestamp - sendTimestamp) ;// Calculate latency
-
                     // Debug prints to verify the timestamps
-                    System.out.println("Send Timestamp: " + sendTimestamp);
-
-                    System.out.println("Calculated Latency: " + latency);
                     System.out.println("Latency in receiving text message for  the connected user:"  + latency + " ms");
                     addMessage(messageData.getString("message"));
-                   }
+                }
                 if (messageData.has("audio_data")) {
-//                    System.out.println("Latency in receiving audio data  for  the connected user:"  + latency + " ms");
+                     long sendTimestamp = messageData.getLong("timestamp");
+                    long receiveTimestamp = System.currentTimeMillis();
+                    long latency = (receiveTimestamp - sendTimestamp) ;// Calculate latency
+                    // Debug prints to verify the timestamps
+                    System.out.println("Latency in receiving audio message for  the connected user:"  + latency + " ms");
                     String audioDataString = messageData.getString("audio_data");
                     convertAudioData(audioDataString);
                     addPlayButton();
-
                 }
                 else if (messageData.has("image_base64")) {
-//                    System.out.println("Latency in receiving audio data for  the connected user:"  + latency + " ms");
+                    long sendTimestamp = messageData.getLong("timestamp");
+                    long receiveTimestamp = System.currentTimeMillis();
+                    long latency = (receiveTimestamp - sendTimestamp) ;// Calculate latency
+                    // Debug prints to verify the timestamps
+                    System.out.println("Latency in receiving image message for  the connected user:"  + latency + " ms");
                     String encodedImage = messageData.getString("image_base64");
                     addImageToView(encodedImage);
                 }
@@ -208,7 +210,7 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
         messageArea.addView(buttonLayout);
     }
     private void downloadAudio() {
-        String path = requireContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC) + "/recording_doctor.wav";
+        String path = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) + "/recording_" + System.currentTimeMillis()+"_"+patientUsername + ".wav";
         try (FileOutputStream fos = new FileOutputStream(path)) {
             writeWaveFileHeader(fos, 44100, 1, 16);
             byte[] byteData = shortToByte(audioData, audioData.length);
@@ -237,39 +239,39 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
         }
     }
     private void addImageToView(String encodedImage) {
-            byte[] decodedString = Base64.decode(encodedImage, Base64.DEFAULT);
-            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-            int heightInPixels = (int) (48 * getResources().getDisplayMetrics().density + 0.5f);
-            LinearLayout horizontalLayout = new LinearLayout(requireContext());
-            horizontalLayout.setOrientation(LinearLayout.HORIZONTAL);
-            horizontalLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    heightInPixels));
-            horizontalLayout.setGravity(Gravity.START);
+        byte[] decodedString = Base64.decode(encodedImage, Base64.DEFAULT);
+        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        int heightInPixels = (int) (48 * getResources().getDisplayMetrics().density + 0.5f);
+        LinearLayout horizontalLayout = new LinearLayout(requireContext());
+        horizontalLayout.setOrientation(LinearLayout.HORIZONTAL);
+        horizontalLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                heightInPixels));
+        horizontalLayout.setGravity(Gravity.START);
 
 
-            // Create and configure the download ImageButton
-            Button downloadButton = new Button(requireContext());
-            downloadButton.setText("Download image..."); // Use your drawable resource
-            LinearLayout.LayoutParams downloadButtonParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    heightInPixels);
-            downloadButton.setBackgroundResource(R.drawable.custom_button_background); // Set the custom background
-            downloadButton.setPadding(16, 8, 16, 8); // Add padding
-            downloadButton.setCompoundDrawablePadding(8);
-            downloadButtonParams.setMargins(0, 16, 0, 16);
-            downloadButton.setLayoutParams(downloadButtonParams);
-            horizontalLayout.addView(downloadButton);
+        // Create and configure the download ImageButton
+        Button downloadButton = new Button(requireContext());
+        downloadButton.setText("Download image..."); // Use your drawable resource
+        LinearLayout.LayoutParams downloadButtonParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                heightInPixels);
+        downloadButton.setBackgroundResource(R.drawable.custom_button_background); // Set the custom background
+        downloadButton.setPadding(16, 8, 16, 8); // Add padding
+        downloadButton.setCompoundDrawablePadding(8);
+        downloadButtonParams.setMargins(0, 16, 0, 16);
+        downloadButton.setLayoutParams(downloadButtonParams);
+        horizontalLayout.addView(downloadButton);
 
-            downloadButton.setOnClickListener(v -> {
-                saveImageToDownloads(decodedByte);
-            });
-            messageArea.addView(horizontalLayout);
+        downloadButton.setOnClickListener(v -> {
+            saveImageToDownloads(decodedByte);
+        });
+        messageArea.addView(horizontalLayout);
     }
     private void saveImageToDownloads(@NonNull Bitmap bitmap) {
         File downloadDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
         if (downloadDir != null) {
-            File imageFile = new File(downloadDir, "image_" + System.currentTimeMillis() + ".png");
+            File imageFile = new File(downloadDir, "image_" + System.currentTimeMillis() +"_"+ patientUsername+ ".png");
             try (FileOutputStream out = new FileOutputStream(imageFile)) {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                 Toast.makeText(requireContext(), "Image saved to Downloads", Toast.LENGTH_SHORT).show();
@@ -292,8 +294,8 @@ public class UserDetailActivity extends Fragment implements SocketResponseHandle
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
         params.setMargins(0, 16, 0, 16);
-            textView.setBackgroundResource(R.drawable.user_message_background);
-            params.gravity = Gravity.START;
+        textView.setBackgroundResource(R.drawable.user_message_background);
+        params.gravity = Gravity.START;
         textView.setLayoutParams(params);
         messageArea.addView(textView);
     }

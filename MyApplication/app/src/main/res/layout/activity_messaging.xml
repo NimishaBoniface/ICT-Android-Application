@@ -1,10 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MessagingActivity">
 
+    <!-- Top Bar -->
     <RelativeLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
@@ -35,16 +36,24 @@
             android:layout_centerVertical="true" />
     </RelativeLayout>
 
-    <!-- Chat Messages Area -->
-    <LinearLayout
-        android:id="@+id/messageArea"
+    <!-- Chat Messages Area inside a ScrollView -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_below="@id/topBar"
         android:layout_above="@id/messageInputBar"
-        android:orientation="vertical"
-        android:padding="16dp">
-    </LinearLayout>
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/messageArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <!-- Messages will be added here dynamically -->
+        </LinearLayout>
+    </ScrollView>
 
     <!-- Input Field and Buttons -->
     <LinearLayout

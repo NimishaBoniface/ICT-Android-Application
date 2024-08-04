@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.time.Instant;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import javax.net.ssl.SSLContext;
@@ -17,6 +20,9 @@ import javax.net.ssl.SSLSocketFactory;
 public class SocketManager {
     private static final String SERVER_IP = "10.0.2.2";
 //    private static final String SERVER_IP = "192.168.0.5";
+
+//    private static final String SERVER_IP = "172.23.244.113";
+
     private static final int SERVER_PORT = 1234;
     private static final String TAG = "SocketManager";
     private static SocketManager instance;
@@ -76,6 +82,7 @@ public class SocketManager {
         }
 
         void listenForMessages(String username, TrustManager[] trustManagers) {
+//            System.out.println("Recieved Timestamp.................................: " + System.currentTimeMillis());
             new Thread(() -> {
                 try {
                     String response;
@@ -90,6 +97,9 @@ public class SocketManager {
         }
 
         void sendMessage(String action, String username, String password, String role, String message, String audioCsvData, String encodedImage, long sendTimestamp) {
+            long sendTime = System.currentTimeMillis();
+//            long sendTime = Calendar.getInstance().getTimeInMillis();
+            System.out.println("Send Timestamp............................: " + sendTime);
             new Thread(() -> {
                 if (isConnected) {
                     JSONObject jsonObject = new JSONObject();
@@ -98,7 +108,7 @@ public class SocketManager {
                             case "sendMessage":
                                 jsonObject.put("username", username);
                                 jsonObject.put("message", message);
-                                jsonObject.put("timestamp", SocketManager.this.sendTimestamp);
+                                jsonObject.put("timestamp", sendTime);
                                 break;
                             case "login":
                                 jsonObject.put("action", action);
@@ -119,17 +129,17 @@ public class SocketManager {
                             case "sendAudio":
                                 jsonObject.put("username", username);
                                 jsonObject.put("audio_csv", audioCsvData);
-                                jsonObject.put("timestamp", SocketManager.this.sendTimestamp);
+                                jsonObject.put("timestamp", sendTime);
                                 break;
                             case "sendImage":
                                 jsonObject.put("username", username);
                                 jsonObject.put("image_base64",  encodedImage);
-                                jsonObject.put("timestamp", SocketManager.this.sendTimestamp);
+                                jsonObject.put("timestamp", sendTime);
                                 break;
                         }
                         String data = jsonObject.toString();
                         Log.d(TAG, "Sending message: " + data);
-                        System.out.println(System.currentTimeMillis());
+                        System.out.println();
                         writer.println(data);
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -253,4 +263,6 @@ public class SocketManager {
 
         }
     }
+
+
 }
