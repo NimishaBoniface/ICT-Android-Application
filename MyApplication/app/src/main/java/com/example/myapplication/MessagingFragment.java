@@ -365,33 +365,31 @@ public class MessagingFragment extends Fragment implements SocketResponseHandler
     }
 
     private void showRecordPopup() {
+        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_RECORD_AUDIO);
+            return;
+        }
         recordDialog = new Dialog(requireContext());
         recordDialog.setContentView(R.layout.record_popup);
         recordDialog.setTitle("Record Audio");
-
         TextView recordingStatus = recordDialog.findViewById(R.id.recordingStatus);
         ProgressBar recordingProgress = recordDialog.findViewById(R.id.recordingProgress);
         Button recordButton = recordDialog.findViewById(R.id.recordButton);
         Button playButton = recordDialog.findViewById(R.id.playButton);
-
         Button uploadButton = recordDialog.findViewById(R.id.uploadButton);
-
         recordButton.setOnClickListener(v -> {
-            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_RECORD_AUDIO);
-                return;
-            }
             startRecording();
             dialogUIManagement(recordingStatus,recordingProgress, recordButton,playButton,
                     uploadButton);
         });
         playButton.setOnClickListener(v -> playRecording());
-
         uploadButton.setOnClickListener(v -> {
             sendAudioToServer();
             addPlayButtonToChat();
             recordDialog.dismiss();
         });
+        playButton.setEnabled(false);
+        uploadButton.setEnabled(false);
         recordDialog.show();
     }
 
@@ -631,7 +629,6 @@ public class MessagingFragment extends Fragment implements SocketResponseHandler
                 Toast.makeText(requireContext(), "Permissions not granted", Toast.LENGTH_SHORT).show();
             }
         }
-
         if (requestCode == REQUEST_CODE_READ_MEDIA_AUDIO) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (selectedWavUri != null) {
@@ -642,8 +639,6 @@ public class MessagingFragment extends Fragment implements SocketResponseHandler
                 Toast.makeText(requireContext(), "Permission denied to read media audio", Toast.LENGTH_SHORT).show();
             }
         }
-
-
     }
     private void dialogUIManagement(TextView recordingStatus, ProgressBar recordingProgress, Button recordButton, Button playButton, Button uploadButton) {
         recordingStatus.setText("Recording...");

@@ -10,10 +10,10 @@
         android:id="@+id/welcomeTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome"
-        android:textSize="45sp"
+        android:text="Welcome to DocInteract"
+        android:textSize="30sp"
         android:textStyle="bold"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="34dp"/>
 
     <!-- Main Buttons Row -->
     <LinearLayout
